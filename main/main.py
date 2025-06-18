@@ -315,7 +315,7 @@ def main():
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Load and run the selected tool
-        tool_path = Path(st.session_state.current_tool)
+        tool_path = Path("main") / st.session_state.current_tool
         if tool_path.exists():
             load_tool(tool_path)
         else:
