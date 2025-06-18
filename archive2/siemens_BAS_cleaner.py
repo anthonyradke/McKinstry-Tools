@@ -12,6 +12,16 @@ def run():
     from tempfile import NamedTemporaryFile, TemporaryDirectory
     import re
 
+    # Add a back button and tool header
+    col1, col2 = st.columns([1, 6])
+    with col1:
+        if st.button("← Back", help="Return to Tool Hub"):
+            st.session_state.current_tool = None
+            st.rerun()
+    
+    with col2:
+        st.markdown("### 📈 Siemens BAS Data Cleaner")
+
     def round_timestamp(dt, interval):
         if pd.isna(dt):
             return None
@@ -27,8 +37,6 @@ def run():
             return dt
         else:  # "1 min"
             return dt.replace(second=0, microsecond=0)
-
-
 
     def simplify_name(full_name):
         if not isinstance(full_name, str):
@@ -59,8 +67,6 @@ def run():
         if "Value" in parts:
             parts = parts[:parts.index("Value")]
         return "_".join(parts[-4:])
-
-
 
     def ensure_unique_columns(df):
         seen = {}
@@ -108,7 +114,6 @@ def run():
                 clean_df = clean_df.set_index('datetime').reindex(full_range).rename_axis('datetime').reset_index()
             # else: do nothing in 1-min mode — keep natural timestamps after rounding to :00s
 
-
             return ensure_unique_columns(clean_df)
         except Exception as e:
             log.append(f"Failed to process file: {e}")
@@ -145,9 +150,17 @@ def run():
         wb.save(tmp.name)
         return tmp
 
-    # --- Streamlit Layout ---
-
-    st.title("📈 CSV Batch Cleaner")
+    # --- Main Tool Interface ---
+    
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; color: white;">
+        <h4 style="margin: 0; font-weight: 600;">🔧 Advanced CSV Processing Tool</h4>
+        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
+            Clean and process Siemens Building Automation System data with intelligent formatting
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     if 'processed_files' not in st.session_state:
         st.session_state.processed_files = {}
@@ -168,7 +181,6 @@ def run():
 
     rounding_interval = cols[2].selectbox("Rounding Interval", ["15 min", "1 min"], key="rounding_interval")
 
-
     if "Combined" in mode:
         custom_filename = st.text_input("Enter output file name (no extension)", value="Combined_File")
     else:
@@ -181,15 +193,13 @@ def run():
     with col2:
         reset_button = st.button("🔁 Reset All Fields", key="reset_button", use_container_width=True)
 
-
-
     if reset_button:
-        st.markdown("<meta http-equiv='refresh' content='0'>", unsafe_allow_html=True)
+        st.rerun()
 
     if clean_button and uploaded_files:
         st.session_state.processed_files.clear()
         st.session_state.log_output.clear()
-    
+
         progress_bar = st.progress(0, text="Processing files...")
         n = len(uploaded_files)
 
@@ -203,7 +213,6 @@ def run():
             progress_bar.progress((i + 1) / n, text=f"Processing {i + 1} of {n} files...")
 
         progress_bar.empty()
-
         st.session_state.cleaned = True
 
     if st.session_state.get("cleaned"):
@@ -245,52 +254,52 @@ def run():
         for line in st.session_state.log_output:
             st.text(line)
 
+    # Tool-specific styling
     st.markdown("""
     <style>
     /* Base button style */
     .stButton > button {
         font-weight: 600;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         padding: 0.6em 1.2em;
-        transition: background-color 0.3s ease, border 0.3s ease;
+        transition: all 0.3s ease;
         border: 0px solid transparent !important;
     }
 
-    /* Clean Files Button (first button) */
-    .stButton:nth-of-type(1) button {
-        background-color: #262730 !important;
+    /* Clean Files Button */
+    div[data-testid="column"]:nth-child(1) .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         color: white !important;
     }
-    .stButton:nth-of-type(1) button:hover {
-        background-color: #003e94 !important;
+    
+    div[data-testid="column"]:nth-child(1) .stButton > button:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
     }
 
-    /* Reset Button (second button) */
-    .stButton:nth-of-type(2) button {
+    /* Reset Button */
+    div[data-testid="column"]:nth-child(2) .stButton > button {
+        background-color: #e74c3c !important;
+        color: white !important;
+    }
+    
+    div[data-testid="column"]:nth-child(2) .stButton > button:hover {
         background-color: #c0392b !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+    }
+
+    /* Back button styling */
+    div[data-testid="column"]:first-child .stButton > button {
+        background-color: #6c757d !important;
         color: white !important;
+        font-size: 0.9rem !important;
     }
-    .stButton:nth-of-type(2) button:hover {
-        background-color: #003e94 !important;
-    }
-
-    /* Dark mode override */
-    @media (prefers-color-scheme: dark) {
-        .stButton:nth-of-type(1) button {
-            background-color: #262730 !important;
-            color: white !important;
-        }
-        .stButton:nth-of-type(1) button:hover {
-            background-color: #003e94 !important;
-        }
-
-        .stButton:nth-of-type(2) button {
-            background-color: #c0392b !important;
-            color: white !important;
-        }
-        .stButton:nth-of-type(2) button:hover {
-            background-color: #003e94 !important;
-        }
+    
+    div[data-testid="column"]:first-child .stButton > button:hover {
+        background-color: #545b62 !important;
+        transform: translateY(-1px);
     }
 
     .stSelectbox * {
@@ -309,35 +318,30 @@ def run():
         color: #999 !important;
     }
     </style>
-
-
-    </style>
     """, unsafe_allow_html=True)
 
-
-
-
+    # Tool-specific watermark
     st.markdown("""
     <style>
-    #custom-watermark {
+    #tool-watermark {
         position: fixed;
         bottom: 10px;
-        left: 10px;  /* Moved from right to left */
-        font-size: 12px;
+        right: 10px;
+        font-size: 11px;
         color: #aaa;
         z-index: 9999;
     }
-    #custom-watermark a {
+    #tool-watermark a {
         color: #aaa;
         text-decoration: none;
     }
-    #custom-watermark a:hover {
+    #tool-watermark a:hover {
         color: #888;
         text-decoration: underline;
     }
     </style>
 
-    <div id="custom-watermark">
+    <div id="tool-watermark">
         <a href="https://www.linkedin.com/in/anthonyradke/" target="_blank">Made by Anthony Radke</a>
     </div>
     """, unsafe_allow_html=True)
