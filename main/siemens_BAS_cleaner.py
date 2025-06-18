@@ -147,7 +147,7 @@ def run():
 
     # --- Streamlit Layout ---
 
-    st.title("📈 CSV Batch Cleaner")
+    st.title("Siemens BAS Data Cleaner")
 
     if 'processed_files' not in st.session_state:
         st.session_state.processed_files = {}
